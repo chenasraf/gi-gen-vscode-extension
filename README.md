@@ -1,12 +1,9 @@
-# gi-gen README
-
-This is the README for your extension "gi-gen". After writing up a brief description, we recommend
-including the following sections.
+# GI Gen
 
 ## Features
 
 Create a gitignore file for your project automatically. Uses
-[https://github.com/chenasraf/gi_gen](gi_gen) to operate.
+[gi_gen](https://github.com/chenasraf/gi_gen) to operate.
 
 ## Requirements
 
