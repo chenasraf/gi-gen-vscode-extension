@@ -1,11 +1,14 @@
 import path = require('path')
 import * as vscode from 'vscode'
+import { downloadGiGen } from './bin-download'
 import { getGiGenBinPath, getWorkspaceDir, pathExists, shellExec } from './utils'
 
 type OverwriteAnswer = 'Overwrite' | 'Append' | 'Skip'
 
 export async function main(context: vscode.ExtensionContext) {
   console.log('Start')
+
+  await downloadGiGen(context)
 
   const useDiscoveryAnswer = await getUseAutoDiscoveryAnswer()
   if (useDiscoveryAnswer === undefined) {
@@ -20,6 +23,9 @@ export async function main(context: vscode.ExtensionContext) {
         : await getAllLanguages(context)
     },
   )
+  if (useDiscoveryAnswer && langs.length === 1) {
+    vscode.window.showInformationMessage(`Discovered language: ${langs[0]}`)
+  }
   console.log('Detected:', langs)
 
   const selectedLangs = await getSelectedLanguages(langs)

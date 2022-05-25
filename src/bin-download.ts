@@ -45,27 +45,12 @@ export function setInstalledVersion(context: vscode.ExtensionContext, version: s
 }
 
 export async function downloadGiGen(context: vscode.ExtensionContext) {
-  let binPath!: string
-  let binDir!: string
-  let cur!: string
-  let remote!: string
-  let platform!: string
-  let binExists!: boolean
-
-  await vscode.window.withProgress(
-    {
-      location: vscode.ProgressLocation.Notification,
-      title: 'Detecting installed GI Gen version...',
-    },
-    async () => {
-      binPath = getGiGenBinPath(context)
-      binDir = path.dirname(binPath)
-      cur = await getInstalledVersion(context)
-      remote = await getLatestRemoteVersion()
-      platform = await getPlatform()
-      binExists = await pathExists(binPath)
-    },
-  )
+  const binPath = getGiGenBinPath(context)
+  const binDir = path.dirname(binPath)
+  const cur = await getInstalledVersion(context)
+  const remote = await getLatestRemoteVersion()
+  const platform = await getPlatform()
+  const binExists = await pathExists(binPath)
 
   if (cur !== remote || !binExists) {
     if (!(await pathExists(binDir))) {
@@ -84,7 +69,7 @@ export async function downloadGiGen(context: vscode.ExtensionContext) {
     )
     vscode.window.showInformationMessage('GI Gen downloaded')
   } else {
-    vscode.window.showInformationMessage('GI Gen already up to date')
+    // vscode.window.showInformationMessage('GI Gen already up to date')
     console.log('gi_gen already updated')
   }
 }

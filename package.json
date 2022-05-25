@@ -19,10 +19,6 @@
       {
         "command": "gi-gen.generate",
         "title": "Generate .gitignore File: Run"
-      },
-      {
-        "command": "gi-gen.download",
-        "title": "Generate .gitignore File: Install"
       }
     ]
   },
