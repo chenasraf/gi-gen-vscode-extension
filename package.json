@@ -10,14 +10,19 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:gi-gen.generate"
+    "onCommand:gi-gen.generate",
+    "onCommand:gi-gen.download"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
         "command": "gi-gen.generate",
-        "title": "Generate .gitignore File"
+        "title": "Generate .gitignore File: Run"
+      },
+      {
+        "command": "gi-gen.download",
+        "title": "Generate .gitignore File: Install"
       }
     ]
   },

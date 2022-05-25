@@ -1,31 +1,44 @@
+import path = require('path')
 import * as vscode from 'vscode'
-import * as cp from 'child_process'
-import * as fs from 'fs/promises'
-import { F_OK } from 'constants'
+import { downloadGiGen } from './bin-download'
+import { getGiGenBinPath, getWorkspaceDir, pathExists, shellExec } from './utils'
 
 type OverwriteAnswer = 'Overwrite' | 'Append' | 'Skip'
 
-export async function main() {
+export async function main(context: vscode.ExtensionContext) {
   console.log('Start')
 
-  const langs = await getDetectedLanguages()
+  const useDiscoveryAnswer = await getUseAutoDiscoveryAnswer()
+  let langs: string[] = []
+  vscode.window.withProgress(
+    { location: vscode.ProgressLocation.Notification, title: 'Finding languages...' },
+    async () => {
+      langs = useDiscoveryAnswer
+        ? await getDetectedLanguages(context)
+        : await getAllLanguages(context)
+    },
+  )
+  const selectedLangs = await getSelectedLanguages(langs)
+  const shouldClean = await getShouldCleanAnswer()
+  const overwriteAnswer: OverwriteAnswer = await getOverwriteAnswer()
 
   console.log('Detected:', langs)
   console.log('Open QuickPick')
 
-  const selectedLangs = await getSelectedLanguages(langs)
-
-  const shouldClean = await getShouldCleanAnswer()
-  let overwriteAnswer: OverwriteAnswer = await getOverwriteAnswer()
   if (overwriteAnswer === 'Skip') {
     vscode.window.showInformationMessage('A .gitignore file already exists, skipped')
     return
   }
-
-  const out = await runGiGen(
-    selectedLangs!.map((i) => i.label),
-    shouldClean,
-    overwriteAnswer,
+  let out!: string
+  vscode.window.withProgress(
+    { location: vscode.ProgressLocation.Notification, title: 'Generating .gitignore file...' },
+    async () => {
+      out = await runGiGen(
+        context,
+        selectedLangs!.map((i) => i.label),
+        { cleanup: shouldClean, overwrite: overwriteAnswer, autoDiscovery: useDiscoveryAnswer },
+      )
+    },
   )
 
   console.log('Output:', out)
@@ -57,70 +70,55 @@ async function getShouldCleanAnswer() {
   )
 }
 
+async function getUseAutoDiscoveryAnswer() {
+  return (
+    (
+      await vscode.window.showQuickPick([{ label: 'Automatically' }, { label: 'Manually' }], {
+        placeHolder: 'Discover project languages automatically?',
+      })
+    )?.label === 'Automatically'
+  )
+}
+
 async function getOverwriteAnswer() {
   let overwriteAnswer: OverwriteAnswer = 'Overwrite'
-  if (await pathExists(getWorkspaceDir()!.fsPath)) {
-    overwriteAnswer = (await vscode.window.showQuickPick<{
-      label: OverwriteAnswer
-    }>([{ label: 'Overwrite' }, { label: 'Append' }, { label: 'Skip' }], {
-      placeHolder: 'The file .gitignore already exists om the project, choose:',
-    }))!.label
+  if (await pathExists(path.join(getWorkspaceDir()!.fsPath, '.gitignore'))) {
+    overwriteAnswer =
+      (
+        await vscode.window.showQuickPick<{
+          label: OverwriteAnswer
+        }>([{ label: 'Overwrite' }, { label: 'Append' }, { label: 'Skip' }], {
+          placeHolder: 'The file .gitignore already exists om the project, choose:',
+        })
+      )?.label ?? 'Skip'
   }
   return overwriteAnswer
 }
 
 function runGiGen(
+  context: vscode.ExtensionContext,
   languages: string[],
-  cleanup: boolean,
-  overwriteAnswer: OverwriteAnswer,
+  {
+    cleanup,
+    overwrite,
+    autoDiscovery,
+  }: { cleanup: boolean; overwrite: OverwriteAnswer; autoDiscovery: boolean },
 ): Promise<string> {
   const args: string[] = [
-    languages.length ? '-l ' + languages.join(',') : '-d',
+    ...(languages.length ? ['-l', languages.join(',')] : ['-d']),
     cleanup ? '-c' : '-k',
-    overwriteAnswer === 'Overwrite' ? '-w' : '-a',
+    overwrite === 'Overwrite' ? '-w' : '-a',
   ].filter(Boolean) as string[]
 
-  return shellExec('gi_gen', args)
+  return shellExec(getGiGenBinPath(context), args)
 }
 
-async function getDetectedLanguages(): Promise<string[]> {
-  const res = await shellExec('gi_gen', ['-detect-languages'])
+async function getDetectedLanguages(context: vscode.ExtensionContext): Promise<string[]> {
+  const res = await shellExec(getGiGenBinPath(context), ['-detect-languages'])
   return res.split('\n').filter(Boolean)
 }
 
-function shellExec(cmd: string, args?: string[]): Promise<string> {
-  const wd = getWorkspaceDir()
-  const input = [cmd, ...(args ?? [])].join(' ')
-  console.log('Executing', input, 'in', wd?.fsPath)
-  return new Promise((resolve, reject) => {
-    cp.exec(input, { cwd: wd!.fsPath }, (err, stdout, stderr) => {
-      // console.log('stdout:', stdout)
-      // console.log('stderr:', stderr)
-      if (err) {
-        reject(err)
-        return
-      }
-      if (stderr) {
-        reject(stderr)
-        return
-      }
-      resolve(stdout)
-    })
-  })
-}
-
-function getWorkspaceDir() {
-  return vscode.workspace.workspaceFolders?.[0].uri
-}
-
-async function pathExists(filePath: string): Promise<boolean> {
-  try {
-    await fs.access(filePath, F_OK)
-    return true
-  } catch (e: any) {
-    if (e.code === 'ENOENT') {
-      return false
-    }
-    throw e
-  }
+async function getAllLanguages(context: vscode.ExtensionContext): Promise<string[]> {
+  const res = await shellExec(getGiGenBinPath(context), ['-all-languages'])
+  return res.split('\n').filter(Boolean)
 }
