@@ -1,6 +1,5 @@
 import path = require('path')
 import * as vscode from 'vscode'
-import { downloadGiGen } from './bin-download'
 import { getGiGenBinPath, getWorkspaceDir, pathExists, shellExec } from './utils'
 
 type OverwriteAnswer = 'Overwrite' | 'Append' | 'Skip'
