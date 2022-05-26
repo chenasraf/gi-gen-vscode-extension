@@ -7,7 +7,7 @@ Create a gitignore file for your project automatically.
 Can **automatically discover** your project type, or you can choose manually, and allows you to
 **remove unused patterns** from the resulting file.
 
-Uses [gi_gen](https://github.com/chenasraf/gi_gen) to operate.
+Based on [gi_gen](https://github.com/chenasraf/gi_gen).
 
 ## Requirements
 
