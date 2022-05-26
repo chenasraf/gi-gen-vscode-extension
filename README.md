@@ -14,6 +14,6 @@ No requirements other than git, the binary is downloaded on first run.
 
 ## Release Notes
 
-### 1.0.0
+### 0.1.0
 
 Initial release
