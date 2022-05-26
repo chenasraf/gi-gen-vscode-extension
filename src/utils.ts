@@ -36,7 +36,13 @@ export function downloadFile(source: string, target: string): Promise<string> {
   })
 }
 
-export type AvailablePlatform = 'macos-arm' | 'macos-intel' | 'windows' | 'linux'
+export type AvailablePlatform =
+  | 'macos-arm'
+  | 'macos-intel'
+  | 'windows'
+  | 'linux-arm'
+  | 'linux-386'
+  | 'linux-amd64'
 
 export async function getPlatform(): Promise<AvailablePlatform> {
   const { platform } = process
@@ -44,12 +50,27 @@ export async function getPlatform(): Promise<AvailablePlatform> {
     case 'darwin':
       return `macos-${await getMacArch()}`
     case 'linux':
-      return 'linux'
+      return `linux-${await getLinuxArch()}`
     case 'cygwin':
     case 'win32':
       return 'windows'
     default:
       throw new TypeError(`Unsupported platform: ${platform}`)
+  }
+}
+
+export async function getLinuxArch(): Promise<'arm' | 'amd64' | '386'> {
+  const res = await shellExec('uname', ['-m'])
+  switch (res) {
+    case 'i386':
+    case 'i686':
+      return '386'
+    case 'arm':
+      return 'arm'
+    case 'x86_64':
+    case 'amd64':
+    default:
+      return 'amd64'
   }
 }
 

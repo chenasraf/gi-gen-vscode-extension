@@ -1,11 +1,11 @@
 {
   "name": "gi-gen",
-  "displayName": "GI Gen",
+  "displayName": "GI Gen - Smart Gitignore Generator",
   "description": "Generates a .gitignore for your project",
   "publisher": "casraf",
   "repository": "https://github.com/chenasraf/gi-gen-vscode-extension",
   "license": "MIT",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "engines": {
     "vscode": "^1.67.0"
   },
